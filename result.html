@@ -63,6 +63,8 @@
                 <th>最低价</th>
                 <th>收盘价</th>
                 <th>成交量</th>
+                <th>10日均线</th>
+                <th>RSI(14)</th>
                 <th>建议持有天数</th>
                 <th>推荐指数</th>
             </tr>
@@ -87,8 +89,16 @@
                 }
 
                 const dates = Object.keys(data["Time Series (Daily)"]).slice(0, 10);
+                const prices = dates.map(date => parseFloat(data["Time Series (Daily)"][date]["4. close"]));
+                const ma10 = (prices.reduce((sum, price) => sum + price, 0) / prices.length).toFixed(2);
+                const rsi = calculateRSI(prices);
+
                 return dates.map(date => {
                     const stockData = data["Time Series (Daily)"][date];
+                    let rating = "⭐⭐⭐";
+                    if (stockData["4. close"] > ma10) rating = "⭐⭐⭐⭐";
+                    if (rsi < 30) rating = "⭐⭐⭐⭐⭐";
+
                     return {
                         name: stockCode,
                         code: stockCode,
@@ -97,14 +107,27 @@
                         low: stockData["3. low"],
                         close: stockData["4. close"],
                         volume: stockData["5. volume"],
+                        ma10: ma10,
+                        rsi: rsi.toFixed(2),
                         days: "5天",
-                        rating: "⭐⭐⭐⭐"
+                        rating: rating
                     };
                 });
             } catch (error) {
                 console.error("获取股票数据失败:", error);
                 return null;
             }
+        }
+
+        function calculateRSI(prices, period = 14) {
+            let gains = 0, losses = 0;
+            for (let i = 1; i < period; i++) {
+                let diff = prices[i] - prices[i - 1];
+                if (diff > 0) gains += diff;
+                else losses -= diff;
+            }
+            let rs = gains / losses;
+            return 100 - (100 / (1 + rs));
         }
 
         async function displayStockData() {
@@ -123,13 +146,15 @@
                         <td>$${stock.low}</td>
                         <td>$${stock.close}</td>
                         <td>${stock.volume}</td>
+                        <td>$${stock.ma10}</td>
+                        <td>${stock.rsi}</td>
                         <td>${stock.days}</td>
                         <td>${stock.rating}</td>
                     </tr>`;
                     tableBody.innerHTML += row;
                 });
             } else {
-                document.getElementById("stockTableBody").innerHTML = "<tr><td colspan='9'>数据获取失败</td></tr>";
+                document.getElementById("stockTableBody").innerHTML = "<tr><td colspan='11'>数据获取失败</td></tr>";
             }
         }
 
