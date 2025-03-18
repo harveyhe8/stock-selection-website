@@ -50,9 +50,6 @@
             background: #007BFF;
             color: white;
         }
-        canvas {
-            margin-top: 20px;
-        }
     </style>
 </head>
 <body>
@@ -75,54 +72,71 @@
             <tbody id="stockTableBody">
             </tbody>
         </table>
-        <canvas id="priceChart" width="800" height="400"></canvas>
-        <canvas id="volumeChart" width="800" height="400"></canvas>
         <button onclick="goBack()">返回</button>
     </div>
 
     <script>
-        async function fetchStockData(stockCode) {
+        function getQueryParam(param) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(param);
+        }
+
+        function getStockName(stockCode) {
+            const stockNames = {
+                "600519.SS": "贵州茅台",
+                "300750.SZ": "宁德时代",
+                "601318.SS": "中国平安",
+                "0700.HK": "腾讯控股",
+                "9988.HK": "阿里巴巴",
+                "3690.HK": "美团",
+                "AAPL": "苹果公司",
+                "MSFT": "微软",
+                "GOOGL": "谷歌"
+            };
+            return stockNames[stockCode] || stockCode;
+        }
+
+        async function fetchStockData(market) {
             const apiKey = 'I9NX0ANYZJC5SG3K';
-            const url = `https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${stockCode}&apikey=${apiKey}`;
+            let stockList = market === "CN" ? ["600519.SS", "300750.SZ", "601318.SS"] :
+                            market === "HK" ? ["0700.HK", "9988.HK", "3690.HK"] :
+                            ["AAPL", "MSFT", "GOOGL"];
+            let stocksData = [];
 
-            try {
-                const response = await fetch(url);
-                const data = await response.json();
+            for (let stockCode of stockList) {
+                const url = `https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${stockCode}&apikey=${apiKey}`;
+                try {
+                    const response = await fetch(url);
+                    const data = await response.json();
+                    if (!data["Time Series (Daily)"]) continue;
 
-                if (data["Error Message"] || !data["Time Series (Daily)"]) {
-                    console.error("API 数据无效:", data);
-                    return null;
-                }
+                    const dates = Object.keys(data["Time Series (Daily)"]).slice(0, 10);
+                    const prices = dates.map(date => parseFloat(data["Time Series (Daily)"][date]["4. close"]));
+                    const ma10 = (prices.reduce((sum, price) => sum + price, 0) / prices.length).toFixed(2);
+                    const rsi = calculateRSI(prices);
 
-                const dates = Object.keys(data["Time Series (Daily)"]).slice(0, 10);
-                const prices = dates.map(date => parseFloat(data["Time Series (Daily)"][date]["4. close"]));
-                const ma10 = (prices.reduce((sum, price) => sum + price, 0) / prices.length).toFixed(2);
-                const rsi = calculateRSI(prices);
-
-                return dates.map(date => {
-                    const stockData = data["Time Series (Daily)"][date];
                     let rating = "⭐⭐⭐";
-                    if (stockData["4. close"] > ma10) rating = "⭐⭐⭐⭐";
+                    if (prices[0] > ma10) rating = "⭐⭐⭐⭐";
                     if (rsi < 30) rating = "⭐⭐⭐⭐⭐";
 
-                    return {
-                        name: "苹果公司 (Apple)",
+                    stocksData.push({
+                        name: getStockName(stockCode),
                         code: stockCode,
-                        open: stockData["1. open"],
-                        high: stockData["2. high"],
-                        low: stockData["3. low"],
-                        close: stockData["4. close"],
-                        volume: stockData["5. volume"],
+                        open: data["Time Series (Daily)"][dates[0]]["1. open"],
+                        high: data["Time Series (Daily)"][dates[0]]["2. high"],
+                        low: data["Time Series (Daily)"][dates[0]]["3. low"],
+                        close: data["Time Series (Daily)"][dates[0]]["4. close"],
+                        volume: data["Time Series (Daily)"][dates[0]]["5. volume"],
                         ma10: ma10,
                         rsi: rsi.toFixed(2),
                         days: "5天",
                         rating: rating
-                    };
-                });
-            } catch (error) {
-                console.error("获取股票数据失败:", error);
-                return null;
+                    });
+                } catch (error) {
+                    console.error(`获取 ${stockCode} 数据失败`, error);
+                }
             }
+            return stocksData;
         }
 
         function calculateRSI(prices, period = 14) {
@@ -137,37 +151,31 @@
         }
 
         async function displayStockData() {
-            const stockCode = "AAPL";
-            const stocks = await fetchStockData(stockCode);
+            const market = getQueryParam("market") || "US";
+            const stocks = await fetchStockData(market);
 
-            if (stocks) {
-                const tableBody = document.getElementById("stockTableBody");
-                tableBody.innerHTML = "";
-                stocks.forEach(stock => {
-                    const row = `<tr>
-                        <td>${stock.name}</td>
-                        <td>${stock.code}</td>
-                        <td>$${stock.open}</td>
-                        <td>$${stock.high}</td>
-                        <td>$${stock.low}</td>
-                        <td>$${stock.close}</td>
-                        <td>${stock.volume}</td>
-                        <td>$${stock.ma10}</td>
-                        <td>${stock.rsi}</td>
-                        <td>${stock.days}</td>
-                        <td>${stock.rating}</td>
-                    </tr>`;
-                    tableBody.innerHTML += row;
-                });
-            } else {
-                document.getElementById("stockTableBody").innerHTML = "<tr><td colspan='11'>数据获取失败</td></tr>";
-            }
+            const tableBody = document.getElementById("stockTableBody");
+            tableBody.innerHTML = "";
+            stocks.forEach(stock => {
+                const row = `<tr>
+                    <td>${stock.name}</td>
+                    <td>${stock.code}</td>
+                    <td>$${stock.open}</td>
+                    <td>$${stock.high}</td>
+                    <td>$${stock.low}</td>
+                    <td>$${stock.close}</td>
+                    <td>${stock.volume}</td>
+                    <td>$${stock.ma10}</td>
+                    <td>${stock.rsi}</td>
+                    <td>${stock.days}</td>
+                    <td>${stock.rating}</td>
+                </tr>`;
+                tableBody.innerHTML += row;
+            });
         }
 
         window.onload = displayStockData;
-        function goBack() {
-            window.location.href = "index.html";
-        }
+        function goBack() { window.location.href = "index.html"; }
     </script>
 </body>
 </html>
