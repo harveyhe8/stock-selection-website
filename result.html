@@ -81,11 +81,21 @@
         async function fetchStockData(stockCode) {
             const apiKey = 'I9NX0ANYZJC5SG3K'; // 替换成你的 Alpha Vantage API Key
             const url = `https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${stockCode}&apikey=${apiKey}`;
-            
+
             try {
                 const response = await fetch(url);
                 const data = await response.json();
-                
+
+                // 检查 API 是否返回错误
+                if (data["Error Message"]) {
+                    console.error("API 错误:", data["Error Message"]);
+                    return null;
+                }
+                if (!data["Time Series (Daily)"]) {
+                    console.error("API 返回的数据无效:", data);
+                    return null;
+                }
+
                 // 获取最新日期的数据
                 const latestDate = Object.keys(data["Time Series (Daily)"])[0];
                 const latestClose = data["Time Series (Daily)"][latestDate]["4. close"];
@@ -108,36 +118,12 @@
                 document.getElementById("holdingDays").innerText = "建议持有天数: 5天"; // 这里可以改成动态计算
                 document.getElementById("recommendation").innerText = "股票推荐指数: ⭐⭐⭐⭐"; // 这里也可以改进
             } else {
-                document.getElementById("stockPrice").innerText = "数据获取失败，请重试";
+                document.getElementById("stockPrice").innerText = "数据获取失败，请稍后重试";
             }
         }
 
         // 页面加载后显示股票数据
         window.onload = displayStockData;
-        function getStars(rating) {
-            let stars = "";
-            let num = rating.length; // 统计“★”的个数
-            for (let i = 0; i < num; i++) {
-                stars += "⭐";
-            }
-            return stars;
-        }
-
-        document.getElementById("rating").innerHTML = getStars(getQueryParam("rating")) || "⭐";
-        // 获取URL参数并填充数据
-        function getQueryParam(param) {
-            const urlParams = new URLSearchParams(window.location.search);
-            return urlParams.get(param);
-        }
-
-        document.getElementById("stockName").innerText = getQueryParam("name") || "未知";
-        document.getElementById("stockCode").innerText = getQueryParam("code") || "000000";
-        document.getElementById("holdingDays").innerText = getQueryParam("days") || "10";
-        document.getElementById("rating").innerText = getQueryParam("rating") || "★★★";
-
-        function goBack() {
-            window.location.href = "index.html";
-        }
     </script>
 </body>
 </html>
