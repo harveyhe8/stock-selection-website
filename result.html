@@ -50,11 +50,38 @@
             background: #007BFF;
             color: white;
         }
+        .filter-container {
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>选股结果</h1>
+        <div class="filter-container">
+            <label>涨跌幅：</label>
+            <select id="changeFilter">
+                <option value="all">全部</option>
+                <option value="up">上涨</option>
+                <option value="down">下跌</option>
+            </select>
+
+            <label>成交量：</label>
+            <select id="volumeFilter">
+                <option value="all">全部</option>
+                <option value="high">高成交量</option>
+                <option value="low">低成交量</option>
+            </select>
+
+            <label>行业：</label>
+            <select id="industryFilter">
+                <option value="all">全部</option>
+                <option value="tech">科技</option>
+                <option value="finance">金融</option>
+                <option value="consumer">消费</option>
+            </select>
+            <button onclick="applyFilters()">筛选</button>
+        </div>
         <table>
             <tr>
                 <th>股票名称</th>
@@ -81,19 +108,19 @@
             return urlParams.get(param);
         }
 
-        function getStockName(stockCode) {
-            const stockNames = {
-                "600519.SS": "贵州茅台",
-                "300750.SZ": "宁德时代",
-                "601318.SS": "中国平安",
-                "0700.HK": "腾讯控股",
-                "9988.HK": "阿里巴巴",
-                "3690.HK": "美团",
-                "AAPL": "苹果公司",
-                "MSFT": "微软",
-                "GOOGL": "谷歌"
+        function getStockIndustry(stockCode) {
+            const industries = {
+                "600519.SS": "consumer",
+                "300750.SZ": "tech",
+                "601318.SS": "finance",
+                "0700.HK": "tech",
+                "9988.HK": "consumer",
+                "3690.HK": "tech",
+                "AAPL": "tech",
+                "MSFT": "tech",
+                "GOOGL": "tech"
             };
-            return stockNames[stockCode] || stockCode;
+            return industries[stockCode] || "unknown";
         }
 
         async function fetchStockData(market) {
@@ -114,13 +141,9 @@
                     const prices = dates.map(date => parseFloat(data["Time Series (Daily)"][date]["4. close"]));
                     const ma10 = (prices.reduce((sum, price) => sum + price, 0) / prices.length).toFixed(2);
                     const rsi = calculateRSI(prices);
-
-                    let rating = "⭐⭐⭐";
-                    if (prices[0] > ma10) rating = "⭐⭐⭐⭐";
-                    if (rsi < 30) rating = "⭐⭐⭐⭐⭐";
-
+                    
                     stocksData.push({
-                        name: getStockName(stockCode),
+                        name: stockCode,
                         code: stockCode,
                         open: data["Time Series (Daily)"][dates[0]]["1. open"],
                         high: data["Time Series (Daily)"][dates[0]]["2. high"],
@@ -129,8 +152,7 @@
                         volume: data["Time Series (Daily)"][dates[0]]["5. volume"],
                         ma10: ma10,
                         rsi: rsi.toFixed(2),
-                        days: "5天",
-                        rating: rating
+                        industry: getStockIndustry(stockCode)
                     });
                 } catch (error) {
                     console.error(`获取 ${stockCode} 数据失败`, error);
@@ -139,25 +161,22 @@
             return stocksData;
         }
 
-        function calculateRSI(prices, period = 14) {
-            let gains = 0, losses = 0;
-            for (let i = 1; i < period; i++) {
-                let diff = prices[i] - prices[i - 1];
-                if (diff > 0) gains += diff;
-                else losses -= diff;
-            }
-            let rs = gains / losses;
-            return 100 - (100 / (1 + rs));
+        function applyFilters() {
+            const industryFilter = document.getElementById("industryFilter").value;
+            const rows = document.querySelectorAll("#stockTableBody tr");
+            rows.forEach(row => {
+                const industry = row.dataset.industry;
+                row.style.display = (industryFilter === "all" || industry === industryFilter) ? "" : "none";
+            });
         }
 
         async function displayStockData() {
             const market = getQueryParam("market") || "US";
             const stocks = await fetchStockData(market);
-
             const tableBody = document.getElementById("stockTableBody");
             tableBody.innerHTML = "";
             stocks.forEach(stock => {
-                const row = `<tr>
+                const row = `<tr data-industry="${stock.industry}">
                     <td>${stock.name}</td>
                     <td>${stock.code}</td>
                     <td>$${stock.open}</td>
@@ -167,8 +186,6 @@
                     <td>${stock.volume}</td>
                     <td>$${stock.ma10}</td>
                     <td>${stock.rsi}</td>
-                    <td>${stock.days}</td>
-                    <td>${stock.rating}</td>
                 </tr>`;
                 tableBody.innerHTML += row;
             });
