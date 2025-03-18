@@ -8,27 +8,29 @@
         body {
             font-family: Arial, sans-serif;
             text-align: center;
-            background-color: #f4f4f4;
+            background-color: #eef2f3;
             padding: 20px;
         }
         .container {
             background: white;
             padding: 20px;
             border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
             display: inline-block;
             width: 90%;
             max-width: 600px;
+            text-align: left;
         }
         button {
             background: #007BFF;
             color: white;
             border: none;
-            padding: 10px 20px;
-            margin-top: 10px;
+            padding: 12px 20px;
+            margin-top: 20px;
             cursor: pointer;
             border-radius: 5px;
             transition: 0.3s;
+            font-size: 16px;
         }
         button:hover {
             background: #0056b3;
@@ -40,7 +42,8 @@
         }
         th, td {
             border: 1px solid #ddd;
-            padding: 10px;
+            padding: 12px;
+            text-align: center;
         }
         th {
             background: #007BFF;
@@ -49,7 +52,6 @@
     </style>
 </head>
 <body>
-   
     <div class="container">
         <h1>选股结果</h1>
         <table>
@@ -66,9 +68,6 @@
                 <td id="tableRating">N/A</td>
             </tr>
         </table>
-        <br>
-        
-        </div>
         <button onclick="goBack()">返回</button>
     </div>
 
@@ -81,18 +80,13 @@
                 const response = await fetch(url);
                 const data = await response.json();
 
-                if (data["Error Message"]) {
-                    console.error("API 错误:", data["Error Message"]);
-                    return null;
-                }
-                if (!data["Time Series (Daily)"]) {
-                    console.error("API 返回的数据无效:", data);
+                if (data["Error Message"] || !data["Time Series (Daily)"]) {
+                    console.error("API 数据无效:", data);
                     return null;
                 }
 
                 const latestDate = Object.keys(data["Time Series (Daily)"])[0];
                 const latestClose = data["Time Series (Daily)"][latestDate]["4. close"];
-
                 return { price: latestClose, date: latestDate };
             } catch (error) {
                 console.error("获取股票数据失败:", error);
@@ -101,7 +95,7 @@
         }
 
         async function displayStockData() {
-            const stockCode = "AAPL"; // 这里先写死苹果公司（后续可以改成用户选择的股票）
+            const stockCode = "AAPL";
             const result = await fetchStockData(stockCode);
 
             if (result) {
@@ -109,24 +103,19 @@
                 const holdingDaysText = "5天";
                 const recommendationText = "⭐⭐⭐⭐";
 
-                // **更新页面顶部信息**
-                document.getElementById("stockName").innerText = "股票名称: " + stockNameText;
-                document.getElementById("stockCode").innerText = `股票代码: ${stockCode}`;
-                document.getElementById("stockPrice").innerText = `当前股价: $${result.price}`;
-                document.getElementById("holdingDays").innerText = `建议持有天数: ${holdingDaysText}`;
-                document.getElementById("recommendation").innerText = `股票推荐指数: ${recommendationText}`;
-
-                // **更新表格中的信息**
                 document.getElementById("tableStockName").innerText = stockNameText;
                 document.getElementById("tableStockCode").innerText = stockCode;
                 document.getElementById("tableHoldingDays").innerText = holdingDaysText;
                 document.getElementById("tableRating").innerText = recommendationText;
             } else {
-                document.getElementById("stockPrice").innerText = "数据获取失败，请稍后重试";
+                document.getElementById("tableStockCode").innerText = "数据获取失败";
             }
         }
 
         window.onload = displayStockData;
+        function goBack() {
+            window.location.href = "index.html";
+        }
     </script>
 </body>
 </html>
