@@ -18,7 +18,7 @@
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
             display: inline-block;
             width: 90%;
-            max-width: 600px;
+            max-width: 800px;
             text-align: left;
         }
         button {
@@ -52,9 +52,6 @@
     </style>
 </head>
 <body>
-    <div id="tradingview-widget-container" style="margin-top: 20px;">
-        <div id="tradingview_chart"></div>
-    </div>
     <div class="container">
         <h1>选股结果</h1>
         <table>
@@ -69,17 +66,8 @@
                 <th>建议持有天数</th>
                 <th>推荐指数</th>
             </tr>
-            <tr>
-                <td id="tableStockName">N/A</td>
-                <td id="tableStockCode">N/A</td>
-                <td id="tableOpenPrice">N/A</td>
-                <td id="tableHighPrice">N/A</td>
-                <td id="tableLowPrice">N/A</td>
-                <td id="tableClosePrice">N/A</td>
-                <td id="tableVolume">N/A</td>
-                <td id="tableHoldingDays">N/A</td>
-                <td id="tableRating">N/A</td>
-            </tr>
+            <tbody id="stockTableBody">
+            </tbody>
         </table>
         <button onclick="goBack()">返回</button>
     </div>
@@ -98,25 +86,21 @@
                     return null;
                 }
 
-                const dates = Object.keys(data["Time Series (Daily)"]);
-                const latestData = data["Time Series (Daily)"][dates[0]];
-                const closePrices = dates.slice(0, 14).map(date => parseFloat(data["Time Series (Daily)"][date]["4. close"]));
-
-                const avgPrice = closePrices.reduce((sum, price) => sum + price, 0) / closePrices.length;
-
-                let rating = "⭐⭐⭐";
-                if (latestData["4. close"] > avgPrice) rating = "⭐⭐⭐⭐";
-                if (latestData["4. close"] > avgPrice * 1.05) rating = "⭐⭐⭐⭐⭐";
-
-                return {
-                    open: latestData["1. open"],
-                    high: latestData["2. high"],
-                    low: latestData["3. low"],
-                    close: latestData["4. close"],
-                    volume: latestData["5. volume"],
-                    date: dates[0],
-                    rating
-                };
+                const dates = Object.keys(data["Time Series (Daily)"]).slice(0, 10);
+                return dates.map(date => {
+                    const stockData = data["Time Series (Daily)"][date];
+                    return {
+                        name: stockCode,
+                        code: stockCode,
+                        open: stockData["1. open"],
+                        high: stockData["2. high"],
+                        low: stockData["3. low"],
+                        close: stockData["4. close"],
+                        volume: stockData["5. volume"],
+                        days: "5天",
+                        rating: "⭐⭐⭐⭐"
+                    };
+                });
             } catch (error) {
                 console.error("获取股票数据失败:", error);
                 return null;
@@ -124,25 +108,28 @@
         }
 
         async function displayStockData() {
-            const stockCode = "AAPL"; // 这里后续可改为用户输入的股票代码
-            const result = await fetchStockData(stockCode);
+            const stockCode = "AAPL"; // 默认股票
+            const stocks = await fetchStockData(stockCode);
 
-            if (result) {
-                const stockNameText = "苹果公司";
-                const holdingDaysText = "5天";
-                const recommendationText = "⭐⭐⭐⭐";
-
-                document.getElementById("tableStockName").innerText = stockNameText;
-                document.getElementById("tableStockCode").innerText = stockCode;
-                document.getElementById("tableOpenPrice").innerText = `$${result.open}`;
-                document.getElementById("tableHighPrice").innerText = `$${result.high}`;
-                document.getElementById("tableLowPrice").innerText = `$${result.low}`;
-                document.getElementById("tableClosePrice").innerText = `$${result.close}`;
-                document.getElementById("tableVolume").innerText = result.volume;
-                document.getElementById("tableHoldingDays").innerText = holdingDaysText;
-                document.getElementById("tableRating").innerText = recommendationText;
+            if (stocks) {
+                const tableBody = document.getElementById("stockTableBody");
+                tableBody.innerHTML = "";
+                stocks.forEach(stock => {
+                    const row = `<tr>
+                        <td>${stock.name}</td>
+                        <td>${stock.code}</td>
+                        <td>$${stock.open}</td>
+                        <td>$${stock.high}</td>
+                        <td>$${stock.low}</td>
+                        <td>$${stock.close}</td>
+                        <td>${stock.volume}</td>
+                        <td>${stock.days}</td>
+                        <td>${stock.rating}</td>
+                    </tr>`;
+                    tableBody.innerHTML += row;
+                });
             } else {
-                document.getElementById("tableStockCode").innerText = "数据获取失败";
+                document.getElementById("stockTableBody").innerHTML = "<tr><td colspan='9'>数据获取失败</td></tr>";
             }
         }
 
@@ -150,32 +137,6 @@
         function goBack() {
             window.location.href = "index.html";
         }
-        function loadTradingView(stockCode) {
-            const widgetContainer = document.getElementById("tradingview-widget-container");
-            widgetContainer.innerHTML = `<script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js">
-            {
-                "width": "100%",
-                "height": "400",
-                "symbol": "${stockCode}",
-                "interval": "D",
-                "timezone": "Asia/Shanghai",
-                "theme": "light",
-                "style": "1",
-                "locale": "zh_CN",
-                "toolbar_bg": "#f1f3f6",
-                "enable_publishing": false,
-                "allow_symbol_change": false,
-                "hide_side_toolbar": false,
-                "withdateranges": true
-            }
-            </script>`;
-        }
-
-        window.onload = function() {
-            const stockCode = getQueryParam("code") || "AAPL";
-            displayStockData();
-            loadTradingView(stockCode);
-        };
     </script>
 </body>
 </html>
