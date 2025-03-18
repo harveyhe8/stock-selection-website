@@ -13,14 +13,14 @@
             justify-content: center;
             height: 100vh;
             margin: 0;
-            background-color: #eef2f3;
+            background-color: #f4f4f4;
         }
         .container {
             text-align: center;
             background: white;
             padding: 20px;
             border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
             width: 90%;
             max-width: 400px;
         }
@@ -46,19 +46,22 @@
             background: white;
             padding: 20px;
             border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
             width: 90%;
-            max-width: 300px;
+            max-width: 350px;
             text-align: center;
         }
         .popup select, .popup input {
             width: 100%;
             padding: 8px;
             margin-top: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
         }
         .popup button {
             margin-top: 10px;
-            width: 45%;
+            width: 48%;
+            display: inline-block;
         }
         #suggestions {
             list-style: none;
@@ -68,6 +71,10 @@
             border: 1px solid #ddd;
             display: none;
             background: white;
+            position: absolute;
+            width: calc(100% - 20px);
+            z-index: 1000;
+            text-align: left;
         }
         #suggestions li {
             padding: 8px;
@@ -123,7 +130,7 @@
             }
             let style = document.getElementById("style").value;
             let market = document.getElementById("market").value;
-
+            
             window.location.href = `result.html?code=${stockCode}&style=${style}&market=${market}`;
         }
 
