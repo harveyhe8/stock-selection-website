@@ -49,6 +49,14 @@
     </style>
 </head>
 <body>
+    <div id="stockData">
+        <h2>选股结果</h2>
+        <p id="stockName">股票名称: 加载中...</p>
+        <p id="stockCode">股票代码: 加载中...</p>
+        <p id="stockPrice">当前股价: 加载中...</p>
+        <p id="holdingDays">建议持有天数: 加载中...</p>
+        <p id="recommendation">股票推荐指数: 加载中...</p>
+    </div>
     <div class="container">
         <h1>选股结果</h1>
         <table>
@@ -70,6 +78,42 @@
     </div>
 
     <script>
+        async function fetchStockData(stockCode) {
+            const apiKey = 'I9NX0ANYZJC5SG3K'; // 替换成你的 Alpha Vantage API Key
+            const url = `https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${stockCode}&apikey=${apiKey}`;
+            
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                // 获取最新日期的数据
+                const latestDate = Object.keys(data["Time Series (Daily)"])[0];
+                const latestClose = data["Time Series (Daily)"][latestDate]["4. close"];
+
+                return { price: latestClose, date: latestDate };
+            } catch (error) {
+                console.error("获取股票数据失败:", error);
+                return null;
+            }
+        }
+
+        async function displayStockData() {
+            const stockCode = "AAPL"; // 这里先写死苹果公司（后续可以改成用户选择的股票）
+            const result = await fetchStockData(stockCode);
+
+            if (result) {
+                document.getElementById("stockName").innerText = "股票名称: 苹果公司";
+                document.getElementById("stockCode").innerText = `股票代码: ${stockCode}`;
+                document.getElementById("stockPrice").innerText = `当前股价: $${result.price}`;
+                document.getElementById("holdingDays").innerText = "建议持有天数: 5天"; // 这里可以改成动态计算
+                document.getElementById("recommendation").innerText = "股票推荐指数: ⭐⭐⭐⭐"; // 这里也可以改进
+            } else {
+                document.getElementById("stockPrice").innerText = "数据获取失败，请重试";
+            }
+        }
+
+        // 页面加载后显示股票数据
+        window.onload = displayStockData;
         function getStars(rating) {
             let stars = "";
             let num = rating.length; // 统计“★”的个数
