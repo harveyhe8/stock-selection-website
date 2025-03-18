@@ -58,12 +58,22 @@
             <tr>
                 <th>股票名称</th>
                 <th>股票代码</th>
+                <th>开盘价</th>
+                <th>最高价</th>
+                <th>最低价</th>
+                <th>收盘价</th>
+                <th>成交量</th>
                 <th>建议持有天数</th>
                 <th>推荐指数</th>
             </tr>
             <tr>
                 <td id="tableStockName">N/A</td>
                 <td id="tableStockCode">N/A</td>
+                <td id="tableOpenPrice">N/A</td>
+                <td id="tableHighPrice">N/A</td>
+                <td id="tableLowPrice">N/A</td>
+                <td id="tableClosePrice">N/A</td>
+                <td id="tableVolume">N/A</td>
                 <td id="tableHoldingDays">N/A</td>
                 <td id="tableRating">N/A</td>
             </tr>
@@ -86,8 +96,16 @@
                 }
 
                 const latestDate = Object.keys(data["Time Series (Daily)"])[0];
-                const latestClose = data["Time Series (Daily)"][latestDate]["4. close"];
-                return { price: latestClose, date: latestDate };
+                const latestData = data["Time Series (Daily)"][latestDate];
+
+                return {
+                    open: latestData["1. open"],
+                    high: latestData["2. high"],
+                    low: latestData["3. low"],
+                    close: latestData["4. close"],
+                    volume: latestData["5. volume"],
+                    date: latestDate
+                };
             } catch (error) {
                 console.error("获取股票数据失败:", error);
                 return null;
@@ -95,7 +113,7 @@
         }
 
         async function displayStockData() {
-            const stockCode = "AAPL";
+            const stockCode = "AAPL"; // 这里后续可改为用户输入的股票代码
             const result = await fetchStockData(stockCode);
 
             if (result) {
@@ -105,6 +123,11 @@
 
                 document.getElementById("tableStockName").innerText = stockNameText;
                 document.getElementById("tableStockCode").innerText = stockCode;
+                document.getElementById("tableOpenPrice").innerText = `$${result.open}`;
+                document.getElementById("tableHighPrice").innerText = `$${result.high}`;
+                document.getElementById("tableLowPrice").innerText = `$${result.low}`;
+                document.getElementById("tableClosePrice").innerText = `$${result.close}`;
+                document.getElementById("tableVolume").innerText = result.volume;
                 document.getElementById("tableHoldingDays").innerText = holdingDaysText;
                 document.getElementById("tableRating").innerText = recommendationText;
             } else {
