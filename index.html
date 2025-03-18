@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>一键选股</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #eef2f3;
+        }
+        .container {
+            text-align: center;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 400px;
+        }
+        button {
+            padding: 12px 20px;
+            font-size: 16px;
+            border: none;
+            background: #007BFF;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            width: 90%;
+            max-width: 300px;
+        }
+        .popup select {
+            width: 100%;
+            padding: 8px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>一键选股</h1>
+        <button onclick="openPopup()">一键选股</button>
+    </div>
+
+    <div class="popup" id="popup">
+        <h2>选择选股参数</h2>
+        <label>选股风格：</label>
+        <select id="style">
+            <option value="long">长线</option>
+            <option value="short">短线</option>
+            <option value="ultra-short">超短线</option>
+        </select>
+        <br><br>
+        <label>股票市场：</label>
+        <select id="market">
+            <option value="A">A股</option>
+            <option value="HK">港股</option>
+            <option value="US">美股</option>
+        </select>
+        <br><br>
+        <button onclick="selectStock()">确认</button>
+        <button onclick="closePopup()">取消</button>
+    </div>
+
+    <script>
+        function openPopup() {
+            document.getElementById("popup").style.display = "block";
+        }
+        function closePopup() {
+            document.getElementById("popup").style.display = "none";
+        }
+        function selectStock() {
+            const style = document.getElementById("style").value;
+            const market = document.getElementById("market").value;
+
+            // 定义不同市场的股票池
+            const stocks = {
+                A: {
+                    long: { name: "贵州茅台", code: "600519.SH", days: "180", rating: "★★★★★" },
+                    short: { name: "宁德时代", code: "300750.SZ", days: "30", rating: "★★★★" },
+                    ultra_short: { name: "东方财富", code: "300059.SZ", days: "5", rating: "★★★" }
+                },
+                HK: {
+                    long: { name: "腾讯控股", code: "0700.HK", days: "180", rating: "★★★★★" },
+                    short: { name: "美团", code: "3690.HK", days: "30", rating: "★★★★" },
+                    ultra_short: { name: "阿里巴巴", code: "9988.HK", days: "5", rating: "★★★" }
+                },
+                US: {
+                    long: { name: "苹果", code: "AAPL", days: "180", rating: "★★★★★" },
+                    short: { name: "微软", code: "MSFT", days: "30", rating: "★★★★" },
+                    ultra_short: { name: "特斯拉", code: "TSLA", days: "5", rating: "★★★" }
+                }
+            };
+
+            // 获取选中的股票
+            let selectedStock = stocks[market][style];
+
+            // 跳转到结果页面并传递数据
+            window.location.href = `result.html?name=${selectedStock.name}&code=${selectedStock.code}&days=${selectedStock.days}&rating=${selectedStock.rating}`;
+        }
+    </script>
+</body>
+</html>
+

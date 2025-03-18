@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>选股结果</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            display: inline-block;
+            width: 90%;
+            max-width: 600px;
+        }
+        button {
+            background: #007BFF;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin-top: 10px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: 0.3s;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+        }
+        th {
+            background: #007BFF;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>选股结果</h1>
+        <table>
+            <tr>
+                <th>股票名称</th>
+                <th>股票代码</th>
+                <th>建议持有天数</th>
+                <th>推荐指数</th>
+            </tr>
+            <tr>
+                <td id="stockName">N/A</td>
+                <td id="stockCode">N/A</td>
+                <td id="holdingDays">N/A</td>
+                <td id="rating">N/A</td>
+            </tr>
+        </table>
+        <br>
+        <button onclick="goBack()">返回</button>
+    </div>
+
+    <script>
+        function getStars(rating) {
+            let stars = "";
+            let num = rating.length; // 统计“★”的个数
+            for (let i = 0; i < num; i++) {
+                stars += "⭐";
+            }
+            return stars;
+        }
+
+        document.getElementById("rating").innerHTML = getStars(getQueryParam("rating")) || "⭐";
+        // 获取URL参数并填充数据
+        function getQueryParam(param) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(param);
+        }
+
+        document.getElementById("stockName").innerText = getQueryParam("name") || "未知";
+        document.getElementById("stockCode").innerText = getQueryParam("code") || "000000";
+        document.getElementById("holdingDays").innerText = getQueryParam("days") || "10";
+        document.getElementById("rating").innerText = getQueryParam("rating") || "★★★";
+
+        function goBack() {
+            window.location.href = "index.html";
+        }
+    </script>
+</body>
+</html>
