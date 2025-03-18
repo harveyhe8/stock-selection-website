@@ -7,31 +7,47 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             text-align: center;
-            background-color: #eef2f3;
+            background-color: #f5f5f7;
             padding: 20px;
+            margin: 0;
         }
         .container {
             background: white;
             padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            display: inline-block;
+            border-radius: 16px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
             width: 90%;
-            max-width: 800px;
-            text-align: left;
+            max-width: 900px;
+            text-align: center;
+            margin: auto;
+        }
+        h1 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #1d1d1f;
+            margin-bottom: 20px;
+        }
+        .filter-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        select, button {
+            padding: 10px 15px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            background: #e8e8ed;
+            cursor: pointer;
+            transition: 0.3s;
         }
         button {
-            background: #007BFF;
+            background: #007aff;
             color: white;
-            border: none;
-            padding: 12px 20px;
-            margin-top: 20px;
-            cursor: pointer;
-            border-radius: 5px;
-            transition: 0.3s;
-            font-size: 16px;
         }
         button:hover {
             background: #0056b3;
@@ -40,18 +56,20 @@
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
+            border-radius: 12px;
+            overflow: hidden;
         }
         th, td {
-            border: 1px solid #ddd;
+            border-bottom: 1px solid #ddd;
             padding: 12px;
             text-align: center;
         }
         th {
-            background: #007BFF;
+            background: #007aff;
             color: white;
         }
-        .filter-container {
-            margin-bottom: 20px;
+        tr:last-child td {
+            border-bottom: none;
         }
     </style>
 </head>
@@ -65,14 +83,12 @@
                 <option value="up">上涨</option>
                 <option value="down">下跌</option>
             </select>
-
             <label>成交量：</label>
             <select id="volumeFilter">
                 <option value="all">全部</option>
                 <option value="high">高成交量</option>
                 <option value="low">低成交量</option>
             </select>
-
             <label>行业：</label>
             <select id="industryFilter">
                 <option value="all">全部</option>
@@ -93,7 +109,6 @@
                 <th>成交量</th>
                 <th>10日均线</th>
                 <th>RSI(14)</th>
-                <th>建议持有天数</th>
                 <th>推荐指数</th>
             </tr>
             <tbody id="stockTableBody">
@@ -106,21 +121,6 @@
         function getQueryParam(param) {
             const urlParams = new URLSearchParams(window.location.search);
             return urlParams.get(param);
-        }
-
-        function getStockIndustry(stockCode) {
-            const industries = {
-                "600519.SS": "consumer",
-                "300750.SZ": "tech",
-                "601318.SS": "finance",
-                "0700.HK": "tech",
-                "9988.HK": "consumer",
-                "3690.HK": "tech",
-                "AAPL": "tech",
-                "MSFT": "tech",
-                "GOOGL": "tech"
-            };
-            return industries[stockCode] || "unknown";
         }
 
         async function fetchStockData(market) {
@@ -151,8 +151,7 @@
                         close: data["Time Series (Daily)"][dates[0]]["4. close"],
                         volume: data["Time Series (Daily)"][dates[0]]["5. volume"],
                         ma10: ma10,
-                        rsi: rsi.toFixed(2),
-                        industry: getStockIndustry(stockCode)
+                        rsi: rsi.toFixed(2)
                     });
                 } catch (error) {
                     console.error(`获取 ${stockCode} 数据失败`, error);
@@ -161,22 +160,13 @@
             return stocksData;
         }
 
-        function applyFilters() {
-            const industryFilter = document.getElementById("industryFilter").value;
-            const rows = document.querySelectorAll("#stockTableBody tr");
-            rows.forEach(row => {
-                const industry = row.dataset.industry;
-                row.style.display = (industryFilter === "all" || industry === industryFilter) ? "" : "none";
-            });
-        }
-
         async function displayStockData() {
             const market = getQueryParam("market") || "US";
             const stocks = await fetchStockData(market);
             const tableBody = document.getElementById("stockTableBody");
             tableBody.innerHTML = "";
             stocks.forEach(stock => {
-                const row = `<tr data-industry="${stock.industry}">
+                const row = `<tr>
                     <td>${stock.name}</td>
                     <td>${stock.code}</td>
                     <td>$${stock.open}</td>
