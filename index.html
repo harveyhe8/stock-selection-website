@@ -72,12 +72,14 @@
             <option value="ultra-short">超短线</option>
         </select>
         <br><br>
-        <label>股票市场：</label>
+        <label>选择市场：</label>
         <select id="market">
-            <option value="A">A股</option>
-            <option value="HK">港股</option>
             <option value="US">美股</option>
+            <option value="HK">港股</option>
+            <option value="CN">A股</option>
         </select>
+        <label>输入股票代码：</label>
+        <input type="text" id="stockInput" placeholder="如 AAPL">
         <br><br>
         <button onclick="selectStock()">确认</button>
         <button onclick="closePopup()">取消</button>
@@ -93,31 +95,40 @@
         function selectStock() {
             const style = document.getElementById("style").value;
             const market = document.getElementById("market").value;
+            const stockCode = document.getElementById("stockInput").value.toUpperCase(); // 读取用户输入的股票代码
+                if (!stockCode) {
+                    alert("请输入股票代码！");
+                    return;
+            let stockCode;
+            if (market === "US") {
+                stockCode = "AAPL"; // 苹果
+            } else if (market === "HK") {
+                stockCode = "0700.HK"; // 腾讯
+            } else if (market === "CN") {
+                stockCode = "600519.SS"; // 贵州茅台
+            }
 
-            // 定义不同市场的股票池
-            const stocks = {
-                A: {
-                    long: { name: "贵州茅台", code: "600519.SH", days: "180", rating: "★★★★★" },
-                    short: { name: "宁德时代", code: "300750.SZ", days: "30", rating: "★★★★" },
-                    ultra_short: { name: "东方财富", code: "300059.SZ", days: "5", rating: "★★★" }
-                },
-                HK: {
-                    long: { name: "腾讯控股", code: "0700.HK", days: "180", rating: "★★★★★" },
-                    short: { name: "美团", code: "3690.HK", days: "30", rating: "★★★★" },
-                    ultra_short: { name: "阿里巴巴", code: "9988.HK", days: "5", rating: "★★★" }
-                },
-                US: {
-                    long: { name: "苹果", code: "AAPL", days: "180", rating: "★★★★★" },
-                    short: { name: "微软", code: "MSFT", days: "30", rating: "★★★★" },
-                    ultra_short: { name: "特斯拉", code: "TSLA", days: "5", rating: "★★★" }
-                }
-            };
+            window.location.href = `result.html?code=${stockCode}`;
+        }
+        function getQueryParam(param) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(param);
+        }
 
-            // 获取选中的股票
-            let selectedStock = stocks[market][style];
+        async function displayStockData() {
+            const stockCode = getQueryParam("code") || "AAPL"; // 从 URL 里获取股票代码
+            const result = await fetchStockData(stockCode);
 
-            // 跳转到结果页面并传递数据
-            window.location.href = `result.html?name=${selectedStock.name}&code=${selectedStock.code}&days=${selectedStock.days}&rating=${selectedStock.rating}`;
+            if (result) {
+                document.getElementById("tableStockCode").innerText = stockCode;
+                document.getElementById("tableOpenPrice").innerText = `$${result.open}`;
+                document.getElementById("tableHighPrice").innerText = `$${result.high}`;
+                document.getElementById("tableLowPrice").innerText = `$${result.low}`;
+                document.getElementById("tableClosePrice").innerText = `$${result.close}`;
+                document.getElementById("tableVolume").innerText = result.volume;
+            } else {
+                document.getElementById("tableStockCode").innerText = "数据获取失败";
+            }
         }
     </script>
 </body>
