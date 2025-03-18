@@ -76,28 +76,6 @@
 <body>
     <div class="container">
         <h1>选股结果</h1>
-        <div class="filter-container">
-            <label>涨跌幅：</label>
-            <select id="changeFilter">
-                <option value="all">全部</option>
-                <option value="up">上涨</option>
-                <option value="down">下跌</option>
-            </select>
-            <label>成交量：</label>
-            <select id="volumeFilter">
-                <option value="all">全部</option>
-                <option value="high">高成交量</option>
-                <option value="low">低成交量</option>
-            </select>
-            <label>行业：</label>
-            <select id="industryFilter">
-                <option value="all">全部</option>
-                <option value="tech">科技</option>
-                <option value="finance">金融</option>
-                <option value="consumer">消费</option>
-            </select>
-            <button onclick="applyFilters()">筛选</button>
-        </div>
         <table>
             <tr>
                 <th>股票名称</th>
@@ -109,7 +87,6 @@
                 <th>成交量</th>
                 <th>10日均线</th>
                 <th>RSI(14)</th>
-                <th>推荐指数</th>
             </tr>
             <tbody id="stockTableBody">
             </tbody>
@@ -118,6 +95,8 @@
     </div>
 
     <script>
+        const stockCache = new Map();
+
         function getQueryParam(param) {
             const urlParams = new URLSearchParams(window.location.search);
             return urlParams.get(param);
@@ -128,36 +107,38 @@
             let stockList = market === "CN" ? ["600519.SS", "300750.SZ", "601318.SS"] :
                             market === "HK" ? ["0700.HK", "9988.HK", "3690.HK"] :
                             ["AAPL", "MSFT", "GOOGL"];
-            let stocksData = [];
+            const fetchPromises = stockList.map(stockCode => fetchStockInfo(stockCode, apiKey));
+            return await Promise.all(fetchPromises);
+        }
 
-            for (let stockCode of stockList) {
-                const url = `https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${stockCode}&apikey=${apiKey}`;
-                try {
-                    const response = await fetch(url);
-                    const data = await response.json();
-                    if (!data["Time Series (Daily)"]) continue;
-
-                    const dates = Object.keys(data["Time Series (Daily)"]).slice(0, 10);
-                    const prices = dates.map(date => parseFloat(data["Time Series (Daily)"][date]["4. close"]));
-                    const ma10 = (prices.reduce((sum, price) => sum + price, 0) / prices.length).toFixed(2);
-                    const rsi = calculateRSI(prices);
-                    
-                    stocksData.push({
-                        name: stockCode,
-                        code: stockCode,
-                        open: data["Time Series (Daily)"][dates[0]]["1. open"],
-                        high: data["Time Series (Daily)"][dates[0]]["2. high"],
-                        low: data["Time Series (Daily)"][dates[0]]["3. low"],
-                        close: data["Time Series (Daily)"][dates[0]]["4. close"],
-                        volume: data["Time Series (Daily)"][dates[0]]["5. volume"],
-                        ma10: ma10,
-                        rsi: rsi.toFixed(2)
-                    });
-                } catch (error) {
-                    console.error(`获取 ${stockCode} 数据失败`, error);
-                }
+        async function fetchStockInfo(stockCode, apiKey) {
+            if (stockCache.has(stockCode)) return stockCache.get(stockCode);
+            const url = `https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${stockCode}&apikey=${apiKey}`;
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                if (!data["Time Series (Daily)"]) return null;
+                const dates = Object.keys(data["Time Series (Daily)"]).slice(0, 10);
+                const prices = dates.map(date => parseFloat(data["Time Series (Daily)"][date]["4. close"]));
+                const ma10 = (prices.reduce((sum, price) => sum + price, 0) / prices.length).toFixed(2);
+                const rsi = calculateRSI(prices);
+                const stockData = {
+                    name: stockCode,
+                    code: stockCode,
+                    open: data["Time Series (Daily)"][dates[0]]["1. open"],
+                    high: data["Time Series (Daily)"][dates[0]]["2. high"],
+                    low: data["Time Series (Daily)"][dates[0]]["3. low"],
+                    close: data["Time Series (Daily)"][dates[0]]["4. close"],
+                    volume: data["Time Series (Daily)"][dates[0]]["5. volume"],
+                    ma10: ma10,
+                    rsi: rsi.toFixed(2)
+                };
+                stockCache.set(stockCode, stockData);
+                return stockData;
+            } catch (error) {
+                console.error(`获取 ${stockCode} 数据失败`, error);
+                return null;
             }
-            return stocksData;
         }
 
         async function displayStockData() {
@@ -166,6 +147,7 @@
             const tableBody = document.getElementById("stockTableBody");
             tableBody.innerHTML = "";
             stocks.forEach(stock => {
+                if (!stock) return;
                 const row = `<tr>
                     <td>${stock.name}</td>
                     <td>${stock.code}</td>
