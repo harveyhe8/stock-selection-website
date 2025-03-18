@@ -60,10 +60,10 @@
                 <th>推荐指数</th>
             </tr>
             <tr>
-                <td id="stockName">N/A</td>
-                <td id="stockCode">N/A</td>
-                <td id="holdingDays">N/A</td>
-                <td id="rating">N/A</td>
+                <td id="tableStockName">N/A</td>
+                <td id="tableStockCode">N/A</td>
+                <td id="tableHoldingDays">N/A</td>
+                <td id="tableRating">N/A</td>
             </tr>
         </table>
         <br>
@@ -80,14 +80,13 @@
 
     <script>
         async function fetchStockData(stockCode) {
-            const apiKey = 'I9NX0ANYZJC5SG3K'; // 替换成你的 Alpha Vantage API Key
+            const apiKey = 'I9NX0ANYZJC5SG3K'; // 你的 Alpha Vantage API Key
             const url = `https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${stockCode}&apikey=${apiKey}`;
 
             try {
                 const response = await fetch(url);
                 const data = await response.json();
 
-                // 检查 API 是否返回错误
                 if (data["Error Message"]) {
                     console.error("API 错误:", data["Error Message"]);
                     return null;
@@ -97,7 +96,6 @@
                     return null;
                 }
 
-                // 获取最新日期的数据
                 const latestDate = Object.keys(data["Time Series (Daily)"])[0];
                 const latestClose = data["Time Series (Daily)"][latestDate]["4. close"];
 
@@ -113,17 +111,27 @@
             const result = await fetchStockData(stockCode);
 
             if (result) {
-                document.getElementById("stockName").innerText = "股票名称: 苹果公司";
+                const stockNameText = "苹果公司";
+                const holdingDaysText = "5天";
+                const recommendationText = "⭐⭐⭐⭐";
+
+                // **更新页面顶部信息**
+                document.getElementById("stockName").innerText = "股票名称: " + stockNameText;
                 document.getElementById("stockCode").innerText = `股票代码: ${stockCode}`;
                 document.getElementById("stockPrice").innerText = `当前股价: $${result.price}`;
-                document.getElementById("holdingDays").innerText = "建议持有天数: 5天"; // 这里可以改成动态计算
-                document.getElementById("recommendation").innerText = "股票推荐指数: ⭐⭐⭐⭐"; // 这里也可以改进
+                document.getElementById("holdingDays").innerText = `建议持有天数: ${holdingDaysText}`;
+                document.getElementById("recommendation").innerText = `股票推荐指数: ${recommendationText}`;
+
+                // **更新表格中的信息**
+                document.getElementById("tableStockName").innerText = stockNameText;
+                document.getElementById("tableStockCode").innerText = stockCode;
+                document.getElementById("tableHoldingDays").innerText = holdingDaysText;
+                document.getElementById("tableRating").innerText = recommendationText;
             } else {
                 document.getElementById("stockPrice").innerText = "数据获取失败，请稍后重试";
             }
         }
 
-        // 页面加载后显示股票数据
         window.onload = displayStockData;
     </script>
 </body>
