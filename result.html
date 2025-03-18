@@ -52,6 +52,9 @@
     </style>
 </head>
 <body>
+    <div id="tradingview-widget-container" style="margin-top: 20px;">
+        <div id="tradingview_chart"></div>
+    </div>
     <div class="container">
         <h1>选股结果</h1>
         <table>
@@ -83,7 +86,7 @@
 
     <script>
         async function fetchStockData(stockCode) {
-            const apiKey = 'I9NX0ANYZJC5SG3K'; // 你的 Alpha Vantage API Key
+            const apiKey = 'I9NX0ANYZJC5SG3K';
             const url = `https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${stockCode}&apikey=${apiKey}`;
 
             try {
@@ -95,8 +98,15 @@
                     return null;
                 }
 
-                const latestDate = Object.keys(data["Time Series (Daily)"])[0];
-                const latestData = data["Time Series (Daily)"][latestDate];
+                const dates = Object.keys(data["Time Series (Daily)"]);
+                const latestData = data["Time Series (Daily)"][dates[0]];
+                const closePrices = dates.slice(0, 14).map(date => parseFloat(data["Time Series (Daily)"][date]["4. close"]));
+
+                const avgPrice = closePrices.reduce((sum, price) => sum + price, 0) / closePrices.length;
+
+                let rating = "⭐⭐⭐";
+                if (latestData["4. close"] > avgPrice) rating = "⭐⭐⭐⭐";
+                if (latestData["4. close"] > avgPrice * 1.05) rating = "⭐⭐⭐⭐⭐";
 
                 return {
                     open: latestData["1. open"],
@@ -104,7 +114,8 @@
                     low: latestData["3. low"],
                     close: latestData["4. close"],
                     volume: latestData["5. volume"],
-                    date: latestDate
+                    date: dates[0],
+                    rating
                 };
             } catch (error) {
                 console.error("获取股票数据失败:", error);
@@ -139,6 +150,32 @@
         function goBack() {
             window.location.href = "index.html";
         }
+        function loadTradingView(stockCode) {
+            const widgetContainer = document.getElementById("tradingview-widget-container");
+            widgetContainer.innerHTML = `<script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js">
+            {
+                "width": "100%",
+                "height": "400",
+                "symbol": "${stockCode}",
+                "interval": "D",
+                "timezone": "Asia/Shanghai",
+                "theme": "light",
+                "style": "1",
+                "locale": "zh_CN",
+                "toolbar_bg": "#f1f3f6",
+                "enable_publishing": false,
+                "allow_symbol_change": false,
+                "hide_side_toolbar": false,
+                "withdateranges": true
+            }
+            </script>`;
+        }
+
+        window.onload = function() {
+            const stockCode = getQueryParam("code") || "AAPL";
+            displayStockData();
+            loadTradingView(stockCode);
+        };
     </script>
 </body>
 </html>

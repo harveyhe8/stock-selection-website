@@ -79,10 +79,8 @@
             <option value="CN">A股</option>
         </select>
         <label>输入股票代码：</label>
-        <input type="text" id="stockInput" placeholder="如 AAPL">
-        <br><br>
-        <button onclick="selectStock()">确认</button>
-        <button onclick="closePopup()">取消</button>
+        <input type="text" id="stockInput" placeholder="如 AAPL" onkeyup="fetchStockSuggestions()">
+        <ul id="suggestions" style="list-style: none; padding: 0; max-height: 200px; overflow-y: auto; border: 1px solid #ddd; display: none;"></ul>
     </div>
 
     <script>
@@ -92,22 +90,14 @@
         function closePopup() {
             document.getElementById("popup").style.display = "none";
         }
-        function selectStock() {
-            const style = document.getElementById("style").value;
-            const market = document.getElementById("market").value;
-            const stockCode = document.getElementById("stockInput").value.toUpperCase(); // 读取用户输入的股票代码
-                if (!stockCode) {
-                    alert("请输入股票代码！");
-                    return;
-            let stockCode;
-            if (market === "US") {
-                stockCode = "AAPL"; // 苹果
-            } else if (market === "HK") {
-                stockCode = "0700.HK"; // 腾讯
-            } else if (market === "CN") {
-                stockCode = "600519.SS"; // 贵州茅台
+        function selectStock(stockCode) {
+            if (!stockCode) {
+                stockCode = document.getElementById("stockInput").value.toUpperCase();
             }
-
+            if (!stockCode) {
+                alert("请输入股票代码！");
+                return;
+            }
             window.location.href = `result.html?code=${stockCode}`;
         }
         function getQueryParam(param) {
@@ -128,6 +118,44 @@
                 document.getElementById("tableVolume").innerText = result.volume;
             } else {
                 document.getElementById("tableStockCode").innerText = "数据获取失败";
+            }
+        }
+        async function fetchStockSuggestions() {
+            const query = document.getElementById("stockInput").value.trim();
+            if (query.length < 2) {
+                document.getElementById("suggestions").style.display = "none";
+                return;
+            }
+
+            const apiKey = "I9NX0ANYZJC5SG3K"; // 替换为你的 Alpha Vantage API Key
+            const url = `https://www.alphavantage.co/query?function=SYMBOL_SEARCH&keywords=${query}&apikey=${apiKey}`;
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (!data.bestMatches) {
+                    document.getElementById("suggestions").style.display = "none";
+                    return;
+                }
+
+                const suggestionsList = document.getElementById("suggestions");
+                suggestionsList.innerHTML = "";
+                data.bestMatches.forEach((stock) => {
+                    const item = document.createElement("li");
+                    item.innerText = `${stock["1. symbol"]} - ${stock["2. name"]}`;
+                    item.style.padding = "8px";
+                    item.style.cursor = "pointer";
+                    item.onclick = function () {
+                        document.getElementById("stockInput").value = stock["1. symbol"];
+                        document.getElementById("suggestions").style.display = "none";
+                    };
+                    suggestionsList.appendChild(item);
+                });
+
+                suggestionsList.style.display = "block";
+            } catch (error) {
+                console.error("获取股票代码失败:", error);
             }
         }
     </script>
