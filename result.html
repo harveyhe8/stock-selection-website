@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>选股结果</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -49,6 +50,9 @@
             background: #007BFF;
             color: white;
         }
+        canvas {
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
@@ -71,6 +75,8 @@
             <tbody id="stockTableBody">
             </tbody>
         </table>
+        <canvas id="priceChart" width="800" height="400"></canvas>
+        <canvas id="volumeChart" width="800" height="400"></canvas>
         <button onclick="goBack()">返回</button>
     </div>
 
@@ -100,7 +106,7 @@
                     if (rsi < 30) rating = "⭐⭐⭐⭐⭐";
 
                     return {
-                        name: stockCode,
+                        name: "苹果公司 (Apple)",
                         code: stockCode,
                         open: stockData["1. open"],
                         high: stockData["2. high"],
@@ -131,7 +137,7 @@
         }
 
         async function displayStockData() {
-            const stockCode = "AAPL"; // 默认股票
+            const stockCode = "AAPL";
             const stocks = await fetchStockData(stockCode);
 
             if (stocks) {
